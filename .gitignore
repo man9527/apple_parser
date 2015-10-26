@@ -1,0 +1,79 @@
+# Please keep these sorted alphabetically. These apply to all sub-modules, so that sub-modules
+# should never have their own .gitignore unless they need to perform overrides.
+
+### GEdit ###
+
+*.*~
+
+### Eclipse ###
+
+.classpath
+.externalToolBuilders/
+.metadata
+.project
+.settings/
+bin/
+target-eclipse
+RemoteSystemsTempFiles
+
+### Intellij ###
+
+*.iml
+*.ipr
+*.iws
+.idea/
+
+### Maven ###
+
+target/
+
+### Miscellaneous ###
+
+.DS_Store
+._.DS_Store
+out/
+output/
+pkg/
+*.exe
+*.jj
+*.launch
+*.pdb
+*.prefs
+*.webinfo
+/git-merge.exe.stackdump
+59Deceits.pdf.pgp
+Borland1.txt.pgp
+build/
+calico.dfPackage
+Connection.properties
+DigitalLockerTestClient.zip
+dist/
+install-libs.sh
+integration.dfPackage
+junk/
+local/
+notification.dfPackage
+null/
+payment.dfPackage
+policy.dfPackage
+policy.dfPackage.wmf
+pricing.dfPackage
+private.key
+public.key
+quote.dfPackage
+runtime/
+sample.txt.asc
+schedule.dfPackage
+ScrapPage.jpage
+security.dfPackage
+shared-local-repository
+shared-settings.xml
+sun_jp_JP.html.pgp
+system.dfPackage
+targetAccountingEventReader.cs
+targettarget
+user.dfPackage
+xml.dfPackage
+nb-configuration.xml
+nbactions-rpm-build.xml
+
