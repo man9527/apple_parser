@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"sync"
 	"log"
+	"time"
 )
 
 var mainUrl = "http://search.appledaily.com.tw/charity/projlist/Page/"
@@ -12,7 +13,8 @@ var HelpcasetableChannel chan int
 var HelpcaseDetailChannel chan Helpcase
 var WaitGroupForMainTable sync.WaitGroup
 var WaitGroupForDetail sync.WaitGroup
-
+var IsCheckDate	bool
+var CheckDate	time.Time
 
 type HelpcaseTable struct {
 	Url 			string
@@ -49,7 +51,7 @@ func SubHelpcaseDetailParserListener(fetch int) {
 			BeginToProcessHelpcase(&helpcase)
 			count++
 		} else {
-			WaitGroupForMainTable.Done()
+			// WaitGroupForMainTable.Done()
 
 			func() (ok bool) {
 				defer func() {recover()}()
@@ -84,13 +86,7 @@ func (ht *HelpcaseTable) Parse() bool {
 		log.Printf("連結至蘋果網站，一共%d筆個案\n", ht.TotalRecords)
 
 		for i := 1; i <= ht.TotalRecords / ht.PerPage + 1; i++ {
-			//for i:=67; i<=67; i++ {
-			WaitGroupForMainTable.Add(1)
-			result := func()(ok bool) {
-				defer func() {recover()}()
-				HelpcasetableChannel <- i
-				return true
-			}()
+			result := perPageParser(i)
 
 			if !result {
 				break
@@ -103,8 +99,8 @@ func (ht *HelpcaseTable) Parse() bool {
 	}
 }
 
-func perPageParser(pageNum int) {
-	defer WaitGroupForMainTable.Done()
+func perPageParser(pageNum int) bool {
+	// defer WaitGroupForMainTable.Done()
 	log.Printf("Processing page number %d ...\n", pageNum)
 
 	var url = mainUrl + strconv.Itoa(pageNum)
@@ -115,7 +111,7 @@ func perPageParser(pageNum int) {
 	})
 
 	keepGoing:=true
-
+	shouldKeepGoing:=true
 	if doc!=nil {
 		doc.Find("#inquiry3 table tbody tr").Each(func(i int, s *goquery.Selection) {
 			if (i > 1) { // ignore header line
@@ -126,9 +122,9 @@ func perPageParser(pageNum int) {
 					switch j {
 					case 0:
 						serial = is.Text()
-						detail, _ = is.Find("a").Attr("href")
 					case 1:
 						title = is.Text()
+						detail, _ = is.Find("a").Attr("href")
 					case 2:
 						date = is.Text()
 					case 3:
@@ -137,6 +133,13 @@ func perPageParser(pageNum int) {
 						amount, _ = strconv.Atoi(strings.TrimSpace(is.Text()))
 					}
 				})
+
+				var dateFromRemote, _ = time.Parse("2006/1/2", date)
+
+				if IsCheckDate && dateFromRemote.Before(CheckDate) {
+					log.Println("Case Date is before Filter Date. Terminate." + dateFromRemote.Format("2006/1/2") + "," + CheckDate.Format("2006/1/2"))
+					shouldKeepGoing = false
+				}
 
 				hcase := Helpcase{
 					SerialNo: serial,
@@ -158,6 +161,7 @@ func perPageParser(pageNum int) {
 		})
 	}
 	log.Printf("Processing page number %d done.\n", pageNum)
+	return shouldKeepGoing
 }
 
 func BeginToProcessHelpcase(helpcase *Helpcase) {

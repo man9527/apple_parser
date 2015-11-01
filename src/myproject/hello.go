@@ -55,7 +55,7 @@ func printProgress() {
 func stopProcess() {
 	isRunning=false
 }
-func Run(ow func(output string), fetch int, isReset bool) {
+func Run(ow func(output string), fetch int, isReset bool, isCheckDate bool, filterDate time.Time) {
 	if (isRunning) {
 		log.Println("isRunning is true ... Skip the exeuction")
 		return;
@@ -64,10 +64,13 @@ func Run(ow func(output string), fetch int, isReset bool) {
 		defer stopProcess()
 	}
 
+	helpcase.IsCheckDate = isCheckDate
+	helpcase.CheckDate = filterDate
+
 	init2()
 
 	outputWindow = ow
-	outputWindow("處理中\n")
+	outputWindow("\n處理中\n")
 
 	go printProgress()
 
@@ -89,7 +92,7 @@ func Run(ow func(output string), fetch int, isReset bool) {
 		return
 	}
 
-	helpcase.WaitGroupForMainTable.Wait()
+	// helpcase.WaitGroupForMainTable.Wait()
 	helpcase.WaitGroupForDetail.Wait()
 
 	log.Println("Begin to retry failed request ...")
@@ -102,6 +105,9 @@ func Run(ow func(output string), fetch int, isReset bool) {
 			helpcase.BeginToProcessHelpcase(hp)
 		}
 	}
+
+	outputWindow("\n\n")
+	outputWindow("\nParse結束，產生Excel檔案中\n")
 
 	var file *xlsx.File
 	var sheet1 *xlsx.Sheet
@@ -126,7 +132,9 @@ func Run(ow func(output string), fetch int, isReset bool) {
 
 	stopProcess()
 
+	outputWindow("\n")
 	outputWindow("完成!\n")
+	outputWindow("結束時間:" + time.Now().Format("2006/01/02 03:04:05") + "\n")
 	dir, _ := os.Getwd()
 	outputWindow("請在下列目錄取得檔案：" + dir + outfolder + "\n")
 }
@@ -144,6 +152,8 @@ func createSheet1(sheet *xlsx.Sheet) {
 	cell.Value = "報導標題"
 	cell = row.AddCell()
 	cell.Value = "刊登日期"
+	cell = row.AddCell()
+	cell.Value = "星期"
 	cell = row.AddCell()
 	cell.Value = "狀態"
 	cell = row.AddCell()
@@ -163,6 +173,8 @@ func createSheet1(sheet *xlsx.Sheet) {
 		cell.Value = helpcase.Title
 		cell = row.AddCell()
 		cell.Value = helpcase.Date
+		cell = row.AddCell()
+		cell.SetFormula("weekday(\"" + helpcase.Date + "\",2)")
 		cell = row.AddCell()
 		cell.Value = helpcase.Status
 		cell = row.AddCell()
@@ -188,6 +200,8 @@ func createSheet2(sheet *xlsx.Sheet) {
 	cell = row.AddCell()
 	cell.Value = "刊登日期"
 	cell = row.AddCell()
+	cell.Value = "星期"
+	cell = row.AddCell()
 	cell.Value = "按讚數"
 	cell = row.AddCell()
 	cell.Value = "段落數"
@@ -208,6 +222,8 @@ func createSheet2(sheet *xlsx.Sheet) {
 		cell.Value = helpcase.Title
 		cell = row.AddCell()
 		cell.Value = helpcase.Date
+		cell = row.AddCell()
+		cell.SetFormula("weekday(\"" + helpcase.Date + "\",2)")
 		cell = row.AddCell()
 		cell.SetInt(helpcase.LikeCount)
 		cell = row.AddCell()
@@ -283,6 +299,8 @@ func createDonation() {
 			cell.NumFmt = "#,##0 ;(#,##0)"
 			cell = row.AddCell()
 			cell.Value=donator.Date
+			cell = row.AddCell()
+			cell.SetFormula("weekday(\"" + donator.Date + "\",2)")
 
 			var dDate, _ = time.Parse("2006/1/2", donator.Date)
 			duration := dDate.Sub(publishDate)
@@ -360,6 +378,8 @@ func addHeader(sheet *xlsx.Sheet) {
 		cell.Value="累計(元)	"
 		cell = row.AddCell()
 		cell.Value="捐款明細 / 捐款日期"
+		cell = row.AddCell()
+		cell.Value = "星期"
 		cell = row.AddCell()
 		cell.Value="捐款日期與報導日期間隔差時間"
 		cell = row.AddCell()
